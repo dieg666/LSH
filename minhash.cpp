@@ -7,18 +7,23 @@
 #include <stdio.h>
 #include <climits>
 #include <algorithm>
-
+#include <fstream>
+#include <streambuf>
+#include <sstream>
+#include <stdlib.h>
 using namespace std;
 
 //primeNumber debería ser el primer número primo superior a Ndoc
 unsigned int primeNumber = 5;
 unsigned int nDoc = 4;
 unsigned int setSize = 5;
-unsigned int nHashFunctions = 2;
+unsigned int nHashFunctions = 9;
+int k = 8;
 struct index {
 	unsigned int a;
 	unsigned int b;
 };
+
 ostream &operator<<(ostream &os, const index &i){
 	return os <<"a = "<<i.a<<" b = "<<i.b;
 }
@@ -33,13 +38,18 @@ void output (const  vector < T >  &v) {
 template <class T>
 void output (const vector < vector < T > > &v) {
 	for (unsigned int i = 0; i < v.size(); i++) {
-		for (unsigned int j = 0; j < v[0].size(); j++) {
+		cout<<"Documento: "<<i+1<<endl;
+		for (unsigned int j = 0; j < v[i].size(); j++) {
 			cout << v[i][j]<<" ";
 		}
 		cout<<endl;
 	}
 }
-
+void outputSet( set <string > &s ){
+	for (auto iterador = s.begin(); iterador != s.end(); iterador++){
+		cout << *iterador<<endl;	
+	}
+}
 int sizeSet(const vector <vector <string> > &v) {
 	set<string> s;
 	for (unsigned int i = 0; i < v.size(); i++) {
@@ -47,17 +57,15 @@ int sizeSet(const vector <vector <string> > &v) {
 			s.insert(v[i][j]);
 		}
 	}
+	cout<<endl<<endl;
 	return s.size();
 }
-void init(vector<index> &v) {
+void initIndex(vector<index> &v) {
 	for (unsigned int i = 0; i < v.size(); i++) {
 		srand(time(NULL)*(i+137477057));
 		v[i].a = rand();	
 		v[i].b = rand();
 	}
-}
-
-void getShingles (vector< vector < bool > > &v) {
 }
 
 void minhashSignatures(vector < vector < unsigned int > > & v,const  vector< vector< bool> > &b, const vector <index> &vIndex) {
@@ -84,6 +92,15 @@ float sim(const vector < vector< unsigned int > > &v, const int &a, const int &b
 	}
 	return value/v.size();
 }
+
+void init(int n, char *numeroDoc[]){
+	if(n!=2) {
+		cout<<endl<<"El programa recibe cuantos documentos hay, los documentos tienen que estar de la forma docN.txt"<<endl;
+		exit(1);
+	}
+	nDoc=atoi(numeroDoc[1]);
+}
+
 void prueba (){
 	vector<index> v(2, index{});
 	v[0].a = 1;
@@ -111,22 +128,76 @@ void prueba (){
 	cout<<sim(kek,2,0)<<" "<<sim(kek,2,1)<<" "<<sim(kek,2,2)<<" "<<sim(kek,2,3)<<endl;
 	cout<<sim(kek,3,0)<<" "<<sim(kek,3,1)<<" "<<sim(kek,3,2)<<" "<<sim(kek,3,3)<<endl;
 }
-int main() {
-//	prueba();
 
-	//inicializa los valores a y b para hashear,	
+void  kShingle ( set < string> &setShingles, vector< set<string> > &kShingle){
+	string s, word;
+	string aux = " ";
+	for (int j = 1; j <= nDoc; ++j){
+		string fileAux;
+		set <string> shingleDoc;
+		fileAux = to_string(j); 
+		ifstream file("doc"+fileAux+".txt");
+		for (unsigned int i = 0; i < k and file>>word; i++){
+			if(i==0) s = word;
+	       		else s.append(" "+word );
+		}
+		setShingles.insert(s);
+		shingleDoc.insert(s);
+		while (file>>word){
+			s=s.substr(s.find_first_of(aux)+1);
+	       		s.append(" "+word);
+			shingleDoc.insert(s);
+			setShingles.insert(s);
+		}
+		kShingle.push_back(shingleDoc);
+	}
+}
+
+void getShingles(vector< vector< bool > > &vShingles, const set<string> setShingle, const vector< set< string> > &docShingles){
+	int i = 0;
+	for(auto iterador = setShingle.begin(); iterador != setShingle.end(); iterador++){
+		for(unsigned int j = 0; j<docShingles.size(); j++){
+			cout<<docShingles[j].size()<<" ";
+			if(docShingles[j].find(*iterador)!=docShingles[j].end()) vShingles[i][j]=true;
+			else vShingles[i][j] = false;
+		}
+		cout<<endl;
+		i++;
+	}
+}
+
+int main(int argc, char *argv[]) {
+	init(argc, argv);
+	//kShingles contiene una matriz de shingles, donde las filas son los documentos
+	vector< set <string > > docShingles;	
+
+	// setShingles contiene el set de los shingles de todos los documentos
+	set <string >  setShingles;
+	
+	//indexHash contiene un vector con una tupla que se usará para crear diferentes permutaciones hasheadas,	
 	vector<index> indexHash(nHashFunctions, index{});
-	init(indexHash);
+
+	// ponemos los valores setShingles y kShingles a punto (crea shingles y los añade individualmente por documento 
+	// en docShingles y globalmente en setShingles
+	kShingle(setShingles, docShingles);
 	
-//	output(indexHash);
-	
-	//getShingles consigue la tabla de las ocurrencias del documento j con el shingle i. 
-	//es decir que j es el número de documentos y i es el número total de shingles (set.size de los shingles)
-	vector< vector < bool> > vShingles(setSize, vector<bool> (nDoc,false)); 
-	getShingles(vShingles);
-	
-	//Consigue la signature matrix de 
+	// ponemos los valores de indexHash a punto
+	initIndex(indexHash);
+
+
+	//outputSet(setShingles);
+	//output(docShingles);	
+
+	//vShingles contiene una matrix con el booleano de las ocurrencias de cada documento respecto el set total de shingles 
+	//(siendo 1 una ocurrencia positiva y 0 una negativa)
+	vector< vector < bool> > vShingles(setShingles.size(), vector<bool> (nDoc,false));
+		
+	//iniciamos vShingles 
+	getShingles(vShingles, setShingles, docShingles);
+	output(vShingles);
+	//signatureMatrix contendrá la posición del cada shingle de cada documento pero permutado 
 	vector< vector < unsigned int > > signatureMatrix(nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
 	minhashSignatures(signatureMatrix, vShingles, indexHash);
+	cout<<sim(signatureMatrix,0,1);
 
 }

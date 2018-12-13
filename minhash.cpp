@@ -14,10 +14,9 @@
 using namespace std;
 
 //primeNumber debería ser el primer número primo superior a Ndoc
-unsigned int primeNumber = 5;
+unsigned int primeNumber = 23 ;
 unsigned int nDoc = 4;
-unsigned int setSize = 5;
-unsigned int nHashFunctions = 9;
+unsigned int nHashFunctions = 10;
 int k = 8;
 struct index {
 	unsigned int a;
@@ -47,7 +46,7 @@ void output (const vector < vector < T > > &v) {
 }
 void outputSet( set <string > &s ){
 	for (auto iterador = s.begin(); iterador != s.end(); iterador++){
-		cout << *iterador<<endl;	
+		cout << *iterador << endl;	
 	}
 }
 int sizeSet(const vector <vector <string> > &v) {
@@ -198,6 +197,6 @@ int main(int argc, char *argv[]) {
 	//signatureMatrix contendrá la posición del cada shingle de cada documento pero permutado 
 	vector< vector < unsigned int > > signatureMatrix(nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
 	minhashSignatures(signatureMatrix, vShingles, indexHash);
-	cout<<sim(signatureMatrix,0,1);
+	cout<<sim(signatureMatrix,2,1);
 
 }

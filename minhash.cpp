@@ -14,10 +14,11 @@
 using namespace std;
 
 //primeNumber debería ser el primer número primo superior a Ndoc
-unsigned int primeNumber = 23 ;
+unsigned int primeNumber = 53;
 unsigned int nDoc = 4;
-unsigned int nHashFunctions = 10;
-int k = 8;
+unsigned int setSize = 5;
+unsigned int nHashFunctions = 9;
+int k = 1;
 struct index {
 	unsigned int a;
 	unsigned int b;
@@ -37,7 +38,6 @@ void output (const  vector < T >  &v) {
 template <class T>
 void output (const vector < vector < T > > &v) {
 	for (unsigned int i = 0; i < v.size(); i++) {
-		cout<<"Documento: "<<i+1<<endl;
 		for (unsigned int j = 0; j < v[i].size(); j++) {
 			cout << v[i][j]<<" ";
 		}
@@ -46,7 +46,14 @@ void output (const vector < vector < T > > &v) {
 }
 void outputSet( set <string > &s ){
 	for (auto iterador = s.begin(); iterador != s.end(); iterador++){
-		cout << *iterador << endl;	
+		cout << *iterador<<endl;	
+	}
+}
+void output2(vector < set < string > > &s){
+	for(unsigned int i = 0; i<s.size();i++){
+		cout<<"documento: "<<i<<endl;
+		outputSet(s[i]);
+		cout<<endl;
 	}
 }
 int sizeSet(const vector <vector <string> > &v) {
@@ -184,8 +191,8 @@ int main(int argc, char *argv[]) {
 	initIndex(indexHash);
 
 
-	//outputSet(setShingles);
-	//output(docShingles);	
+	outputSet(setShingles);
+	output2(docShingles);	
 
 	//vShingles contiene una matrix con el booleano de las ocurrencias de cada documento respecto el set total de shingles 
 	//(siendo 1 una ocurrencia positiva y 0 una negativa)

@@ -17,7 +17,7 @@ using namespace std;
 unsigned int primeNumber = 53;
 unsigned int nDoc = 3;
 //unsigned int setSize = 5;
-unsigned int nHashFunctions = 8;
+unsigned int nHashFunctions = 12;
 int k = 6;
 struct index {
 	unsigned int a;
@@ -174,6 +174,9 @@ void getShingles(vector< vector< bool > > &vShingles, const set<string> setShing
 		i++;
 	}
 }
+void generateCandidates(){
+	
+}
 
 int main(int argc, char *argv[]) {
 	init(argc, argv);
@@ -208,8 +211,7 @@ int main(int argc, char *argv[]) {
 	//signatureMatrix contendrá la posición del cada shingle de cada documento pero permutado 
 	vector< vector < unsigned int > > signatureMatrix(nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
 	minhashSignatures(signatureMatrix, vShingles, indexHash);
-	cout<<endl<<endl;
-	output(signatureMatrix);
-	cout<<sim(signatureMatrix,2,1);
-
+	//cout<<endl<<endl;
+	//output(signatureMatrix);
+	cout<<sim(signatureMatrix,1,0);
 }

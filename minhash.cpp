@@ -15,10 +15,10 @@ using namespace std;
 
 //primeNumber debería ser el primer número primo superior a Ndoc
 unsigned int primeNumber = 53;
-unsigned int nDoc = 4;
-unsigned int setSize = 5;
-unsigned int nHashFunctions = 9;
-int k = 1;
+unsigned int nDoc = 3;
+//unsigned int setSize = 5;
+unsigned int nHashFunctions = 8;
+int k = 6;
 struct index {
 	unsigned int a;
 	unsigned int b;
@@ -168,11 +168,9 @@ void getShingles(vector< vector< bool > > &vShingles, const set<string> setShing
 	int i = 0;
 	for(auto iterador = setShingle.begin(); iterador != setShingle.end(); iterador++){
 		for(unsigned int j = 0; j<docShingles.size(); j++){
-			cout<<docShingles[j].size()<<" ";
 			if(docShingles[j].find(*iterador)!=docShingles[j].end()) vShingles[i][j]=true;
 			else vShingles[i][j] = false;
 		}
-		cout<<endl;
 		i++;
 	}
 }
@@ -196,9 +194,10 @@ int main(int argc, char *argv[]) {
 	initIndex(indexHash);
 
 
-	outputSet(setShingles);
-	output2(docShingles);	
-
+	//outputSet(setShingles);
+	//output2(docShingles);	
+	output(indexHash);
+	cout<<endl;
 	//vShingles contiene una matrix con el booleano de las ocurrencias de cada documento respecto el set total de shingles 
 	//(siendo 1 una ocurrencia positiva y 0 una negativa)
 	vector< vector < bool> > vShingles(setShingles.size(), vector<bool> (nDoc,false));
@@ -209,6 +208,8 @@ int main(int argc, char *argv[]) {
 	//signatureMatrix contendrá la posición del cada shingle de cada documento pero permutado 
 	vector< vector < unsigned int > > signatureMatrix(nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
 	minhashSignatures(signatureMatrix, vShingles, indexHash);
+	cout<<endl<<endl;
+	output(signatureMatrix);
 	cout<<sim(signatureMatrix,2,1);
 
 }

@@ -92,6 +92,7 @@ void minhashSignatures(vector < vector < unsigned int > > & v,const  vector< vec
 }
 
 float sim(const vector < vector< unsigned int > > &v, const int &a, const int &b){
+	// dado dos filas de signatures a y b, devuelve la similitud entre esos dos documentos 
 	float value = 0;
 	for (unsigned int i = 0; i < v.size(); i++) {
 		if(v[i][a] == v[i][b]) value++;
@@ -136,6 +137,8 @@ void prueba (){
 }
 
 void  kShingle ( set < string> &setShingles, vector< set<string> > &kShingle){
+	// esta función añade a setShingles todos los shingles de todos los documentos
+	// mientras que kShingle tendrá el set de shingles de cada documento
 	string s, word;
 	string aux = " ";
 	for (int j = 1; j <= nDoc; ++j){
@@ -160,6 +163,8 @@ void  kShingle ( set < string> &setShingles, vector< set<string> > &kShingle){
 }
 
 void getShingles(vector< vector< bool > > &vShingles, const set<string> setShingle, const vector< set< string> > &docShingles){
+	// vShingles tiene tamaño el cardinal del set global de shinglex x número de documentos
+	// el valor de cada celda es true si la celda (iterador, fila) contiene el elemento en el set global, si no, será falso
 	int i = 0;
 	for(auto iterador = setShingle.begin(); iterador != setShingle.end(); iterador++){
 		for(unsigned int j = 0; j<docShingles.size(); j++){

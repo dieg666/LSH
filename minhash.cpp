@@ -11,14 +11,17 @@
 #include <streambuf>
 #include <sstream>
 #include <stdlib.h>
+#include <map>
 using namespace std;
 
 //primeNumber debería ser el primer número primo superior a Ndoc
-unsigned int primeNumber = 53;
+unsigned int primeNumber = 101;
 unsigned int nDoc = 3;
-//unsigned int setSize = 5;
-unsigned int nHashFunctions = 12;
-int k = 6;
+unsigned int nHashFunctions = 500; //número de hash functions
+int k = 5;
+int b =100;  //número de bandas
+int r = 5;
+double t = 0.5; //threshold
 struct index {
 	unsigned int a;
 	unsigned int b;
@@ -39,6 +42,7 @@ vector< vector < bool> > booleanShingles;
 //signatureMatrix contendrá la posición del cada shingle de cada documento pero permutado 
 vector< vector < unsigned int > > signatureMatrix;	
 
+map<pair<int,int>, double> candidates;
 
 ostream &operator<<(ostream &os, const index &i){
 	return os <<"a = "<<i.a<<" b = "<<i.b;
@@ -124,34 +128,6 @@ void init(int n, char *numeroDoc[]){
 	nDoc=atoi(numeroDoc[1]);
 }
 
-void prueba (){
-	vector<index> v(2, index{});
-	v[0].a = 1;
-	v[0].b = 1;
-	v[1].a = 3;
-	v[1].b = 1;	
-	int mod = 5;
-	vector< vector <bool> > b(5, vector<bool>(4, false));
-	b[0][0] = true;
-	b[0][3] = true;
-	b[1][2] = true;
-	b[2][1] = true;
-	b[2][3] = true;
-	b[3][0] = true;
-	b[3][2] = true;
-	b[3][3] = true;
-	b[4][2] = true;
-	vector < vector < unsigned int > > kek (2, vector< unsigned int > (4, UINT_MAX));
-        minhashSignatures(kek, b, v);
-	output(kek);
-	cout<<endl<<endl;
-
-	cout<<sim(kek,0,0)<<" "<<sim(kek,0,1)<<" "<<sim(kek,0,2)<<" "<<sim(kek,0,3)<<endl;
-	cout<<sim(kek,1,0)<<" "<<sim(kek,1,1)<<" "<<sim(kek,1,2)<<" "<<sim(kek,1,3)<<endl;
-	cout<<sim(kek,2,0)<<" "<<sim(kek,2,1)<<" "<<sim(kek,2,2)<<" "<<sim(kek,2,3)<<endl;
-	cout<<sim(kek,3,0)<<" "<<sim(kek,3,1)<<" "<<sim(kek,3,2)<<" "<<sim(kek,3,3)<<endl;
-}
-
 void  kShingle ( set < string> &setShingles, vector< set<string> > &kShingle){
 	// esta función añade a setShingles todos los shingles de todos los documentos
 	// mientras que kShingle tendrá el set de shingles de cada documento
@@ -190,9 +166,59 @@ void initBooleanShingles(vector< vector< bool > > &vShingles, const set<string> 
 		i++;
 	}
 }
-void generateCandidates(){
-	
+double jaccardSignatures(const int &docx, const int &docy){
+	double n = 0;
+	for(int fila = 0; fila < nHashFunctions; fila++){
+		if(signatureMatrix[docx][fila] == signatureMatrix[docy][fila]) ++n;
+	}
+	return  n/nHashFunctions;
 }
+void generateCandidates(){
+	vector <vector <int> > buckets (b, vector<int> (nDoc));
+	hash<string> hString;
+	for(unsigned band = 0; band < b; band++){
+		for (unsigned int col = 0; col < nDoc; col++){
+			char aux[r]; 
+			for(unsigned int row = 0; row < r; row++){
+				aux[row]=signatureMatrix[col][band*r+row];
+			}
+			string aux1 = aux;
+			buckets[band][col] = hString(aux1);
+		}
+	}
+	for (unsigned int band = 0; band < b; band++){
+		for (unsigned col = 0; col < (nDoc-1); col++){
+			for (unsigned int k = col + 1; k < nDoc; k++){
+				if(buckets[band][col] == buckets[band][k]) {
+					pair<int,int> p;
+					p.first = col;
+					p.second = k;
+					candidates[p]=0;	
+				}
+			}
+		}
+	}
+	for(auto it = candidates.begin(); it!=candidates.end(); it++){
+		it->second = jaccardSignatures(it->first.first, it->first.second);
+		cout<<it->first.first<<"y"<<it->first.second<<"jaccard de "<<it->second<<endl;
+	}	
+}
+void writeSimilarity() {
+    //Escriu per pantalla la Similitud de tots els candidats amb Similitud superior al threshold
+    cout <<"VALOR DE THRESHOLD: "<< t << endl;
+    int similars = 0;
+    std::map<pair<int,int>,double>::iterator it = candidates.begin();
+    while (it != candidates.end()) {
+        it->second=(it->second);
+        if (it->second >= t){
+            cout << "Similitud("<<"doc"<<it->first.first+1  << ".txt, " <<"doc"<<it->first.second+1<<".txt) = " << it->second << endl;
+            similars++;
+        }
+        it++;
+    }
+    if (similars == 0) cout << "No hi ha cap parell de documents significativament similars."<<endl;
+}
+
 
 int main(int argc, char *argv[]) {
 	init(argc, argv);
@@ -212,5 +238,7 @@ int main(int argc, char *argv[]) {
 	signatureMatrix = vector< vector < unsigned int > > (nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
 	minhashSignatures(signatureMatrix, booleanShingles, indexHash);
 	
-	cout<<sim(signatureMatrix,1,0)<<endl;
+	cout<<"sim de 0 y 1 :"<<sim(signatureMatrix,1,0)<<endl;
+	generateCandidates();
+	writeSimilarity();
 }

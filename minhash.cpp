@@ -24,6 +24,22 @@ struct index {
 	unsigned int b;
 };
 
+//kShingles contiene una matriz de shingles, donde las filas son los documentos
+vector< set <string > > docShingles;	
+
+// setShingles contiene el set de los shingles de todos los documentos
+set <string >  setShingles;
+	
+//indexHash contiene un vector con una tupla que se usará para crear diferentes permutaciones hasheadas,	
+vector<index> indexHash(nHashFunctions, index{});
+
+//vShingles contiene una matrix con el booleano de las ocurrencias de cada documento respecto el set total de shingles 
+//(siendo 1 una ocurrencia positiva y 0 una negativa)
+vector< vector < bool> > booleanShingles;
+//signatureMatrix contendrá la posición del cada shingle de cada documento pero permutado 
+vector< vector < unsigned int > > signatureMatrix;	
+
+
 ostream &operator<<(ostream &os, const index &i){
 	return os <<"a = "<<i.a<<" b = "<<i.b;
 }
@@ -162,7 +178,7 @@ void  kShingle ( set < string> &setShingles, vector< set<string> > &kShingle){
 	}
 }
 
-void getShingles(vector< vector< bool > > &vShingles, const set<string> setShingle, const vector< set< string> > &docShingles){
+void initBooleanShingles(vector< vector< bool > > &vShingles, const set<string> setShingle, const vector< set< string> > &docShingles){
 	// vShingles tiene tamaño el cardinal del set global de shinglex x número de documentos
 	// el valor de cada celda es true si la celda (iterador, fila) contiene el elemento en el set global, si no, será falso
 	int i = 0;
@@ -180,14 +196,6 @@ void generateCandidates(){
 
 int main(int argc, char *argv[]) {
 	init(argc, argv);
-	//kShingles contiene una matriz de shingles, donde las filas son los documentos
-	vector< set <string > > docShingles;	
-
-	// setShingles contiene el set de los shingles de todos los documentos
-	set <string >  setShingles;
-	
-	//indexHash contiene un vector con una tupla que se usará para crear diferentes permutaciones hasheadas,	
-	vector<index> indexHash(nHashFunctions, index{});
 
 	// ponemos los valores setShingles y kShingles a punto (crea shingles y los añade individualmente por documento 
 	// en docShingles y globalmente en setShingles
@@ -196,22 +204,13 @@ int main(int argc, char *argv[]) {
 	// ponemos los valores de indexHash a punto
 	initIndex(indexHash);
 
-
-	//outputSet(setShingles);
-	//output2(docShingles);	
-	output(indexHash);
-	cout<<endl;
-	//vShingles contiene una matrix con el booleano de las ocurrencias de cada documento respecto el set total de shingles 
-	//(siendo 1 una ocurrencia positiva y 0 una negativa)
-	vector< vector < bool> > vShingles(setShingles.size(), vector<bool> (nDoc,false));
-		
+	booleanShingles = vector< vector < bool> > (setShingles.size(), vector<bool> (nDoc,false));	
 	//iniciamos vShingles 
-	getShingles(vShingles, setShingles, docShingles);
-	output(vShingles);
-	//signatureMatrix contendrá la posición del cada shingle de cada documento pero permutado 
-	vector< vector < unsigned int > > signatureMatrix(nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
-	minhashSignatures(signatureMatrix, vShingles, indexHash);
-	//cout<<endl<<endl;
-	//output(signatureMatrix);
-	cout<<sim(signatureMatrix,1,0);
+	initBooleanShingles(booleanShingles, setShingles, docShingles);
+	
+
+	signatureMatrix = vector< vector < unsigned int > > (nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
+	minhashSignatures(signatureMatrix, booleanShingles, indexHash);
+	
+	cout<<sim(signatureMatrix,1,0)<<endl;
 }

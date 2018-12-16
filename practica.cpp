@@ -185,7 +185,7 @@ void  kShingle (){
 		string fileAux;
 		set <string> actualDocShingle;
 		fileAux = to_string(j); 
-		ifstream file("doc"+fileAux+".txt");
+		ifstream file("data/doc"+fileAux+".txt");
 		for (unsigned int i = 0; i < k and file>>word; i++){
 			if(i==0) s = word;
 	       		else s.append(" "+word );

@@ -58,7 +58,9 @@ vector< vector < unsigned int > > signatureMatrix;
 //mapa con clave de los documentos candidatos
 map<pair<int,int>, double> candidates;
 
-
+// esta tabla de pair contiene los valores b y nHashFunctions más óptimos para aproximarse a t = (1/b)^(1/r) y b*r = nHashFunctions 
+// siendo r un valor arbitrario 3 y cada posición del vector representará (t+1)*10 (posición 0 = 0.10, posición 9 = 1)
+int aproxValues[10] = {1000,125,37,15,8,4,3,2,1,1};
 /*
  *
  * OUTPUT FUNCTIONS
@@ -117,14 +119,12 @@ void init(int n, char *params[]){
 		if(params[3]!="x") k = atoi(params[3]);	
 		if(params[4]!="x") b = atoi(params[4]);	
 		if(params[5]!="x") r = atoi(params[5]);	
-		if(params[6]!="x") t =atof(params[6]);	
 	}	
 	cout<<	" - número de Docuemntos: "<<nDoc<<endl<<
 			" - número de funciones de Hash: "<<nHashFunctions<<endl<<
 			" - valor de K (palabras de cada Shingle): "<<k<<endl<<
 			" - número de bandas: "<<b<<endl<<
-			" - número de filas hasheadas para cada banda: "<<r<<endl<<
-			" - parametro threshold:"<<t<<endl;
+			" - número de filas hasheadas para cada banda: "<<r<<endl;
 	// inicializaciones correspondientes
 	signatureMatrix = vector< vector < unsigned int > > (nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
 	indexHash = vector<index>(nHashFunctions, index{});
@@ -143,20 +143,15 @@ void initPrimeNumber(){
 }
 void initIndex() {
 	initPrimeNumber();
-	clock_t c_start = clock();
 	// iniciamos los valores de los indices para el hasheoº
 	for (unsigned int i = 0; i < indexHash.size(); i++) {
 		srand(time(NULL)*(i+137477057));
 		indexHash[i].a = rand();	
 		indexHash[i].b = rand();
 	}
-	clock_t c_end = clock();
-        cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado en crear los indices para hashear: "
-                << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
 }
 void initBooleanShingles(){
 	//encuentra que valores de cada set de cada documento tienen alguna ocurrencia en el set global de shingles y los pone true, si no falso
-	clock_t c_start = clock();
 	// iniciamos la matrix de booleanos con su tamaño adecuado
 	booleanShingles = vector< vector < bool> > (setShingles.size(), vector<bool> (nDoc,false));	
 	int i = 0;
@@ -167,9 +162,6 @@ void initBooleanShingles(){
 		}
 		i++;
 	}
-	clock_t c_end = clock();
-        cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado para encontrar las ocurrencias  de cada documento respecto el set global de shingles: "
-                << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
 }
 
 
@@ -182,7 +174,6 @@ void initBooleanShingles(){
 void minhashSignatures() {
 	//el hasheo es del estilo (a*i + b) mod primeNumber
 	//miro cada row de b y después cada fila y si da true, modifico v si el valor del hash es inferior a este
-	clock_t c_start = clock();
 	for (unsigned int shingle = 0; shingle < booleanShingles.size(); shingle++) {
 		for (unsigned doc = 0; doc < booleanShingles[0].size(); doc++) {
 			if(booleanShingles[shingle][doc]) {
@@ -195,24 +186,16 @@ void minhashSignatures() {
 			}
 		}
 	}
-	clock_t c_end = clock();
-        cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: para crear las signatures minhash: "
-                << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
 }
 float jaccardSimSignature(const int &a, const int &b){
-	clock_t c_start = clock();
 	// dado dos filas de signatures a y b, devuelve la similitud entre esos dos documentos 
 	float value = 0;
 	for (unsigned int i = 0; i < signatureMatrix.size(); i++) {
 		if(signatureMatrix[i][a] == signatureMatrix[i][b]) value++;
 	}
-	clock_t c_end = clock();
-        //cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
-          //      << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
 	return value/signatureMatrix.size();
 }
 void  kShingle (){
-	clock_t c_start = clock();
 	// esta función añade a setShingles todos los shingles de todos los documentos
 	// mientras que docShingle tendrá el set de shingles de cada documento
 	string s, word;
@@ -221,7 +204,7 @@ void  kShingle (){
 		string fileAux;
 		set <string> actualDocShingle;
 		fileAux = to_string(j); 
-		ifstream file("data/doc"+fileAux+".txt");
+		ifstream file("data/docs_requisits/doc"+fileAux+".txt");
 		for (unsigned int i = 0; i < k and file>>word; i++){
 			if(i==0) s = word;
 	       		else s.append(" "+word );
@@ -236,9 +219,6 @@ void  kShingle (){
 		}
 		docShingles.push_back(actualDocShingle);
 	}
-	clock_t c_end = clock();
-        cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado para shinglear todos los documentos: "
-                << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
 }
 void generateCandidates(){
 	//genera los candidatos haciendo uso de buckets/bandas
@@ -298,7 +278,6 @@ void LSH(){
 }
 float jaccardSimilarity(set <string> &a, const int  &b) {
 	//consigue la similitud de dos sets
-	//clock_t c_start = clock();
         float intersection = 0;
         for(auto it = docShingles[b].begin(); it != docShingles[b].end(); it++) {
 		if (!a.insert(*it).second) {
@@ -306,9 +285,6 @@ float jaccardSimilarity(set <string> &a, const int  &b) {
 			intersection+=1;
 		}
         }
-	//clock_t c_end = clock();
-        //cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
-          //      << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl<<endl;
         return intersection / (float) a.size();
 }
 
@@ -329,24 +305,37 @@ int main(int argc, char *argv[]) {
 	int funcio;
 	// ponemos los valores setShingles y kShingles a punto (crea shingles y los añade individualmente por documento 
 	// en docShingles y globalmente en setShingles
+	clock_t c_start = clock();
 	kShingle();
+	clock_t c_end = clock();
+        cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado para shinglear todos los documentos: "
+                << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
 	
 	// ponemos los valores de indexHash a punto
+	c_start = clock();
 	initIndex();
-	// conseguimos las signatures utilizando minhash
-
+	c_end = clock();
+        cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado para encontrar las ocurrencias  de cada documento respecto el set global de shingles: "
+                << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
+	
+	
 	//iniciamos booleanShingles 
+	c_start = clock();
 	initBooleanShingles();
 	
 	//creamos las signatures y las ponemos a punto
+	c_start = clock();
 	minhashSignatures();
+	c_end = clock();
+        cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: para crear las signatures minhash: "
+                << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
 
 	//dice por pantalla las funcionalidades disponibles
 	cout<<endl;
 	funcionalidades();
 
 	while (cin>>funcio){
-	int x,y;
+	int x,y,lastValue;
 		switch(funcio){
 			case 0:
 				exit(1);
@@ -354,27 +343,60 @@ int main(int argc, char *argv[]) {
 			case 1:
 				cout<<"Qué dos documentos (forma docx, docy) quieres obtener similitud de Jaccard? (valor menor que "<<nDoc<<")"<<endl;
 				cin>> x >> y;
+				c_start = clock();
 				cout<<"La similitud de doc"<<x<<".txt y doc"<<y<<".txt es de "<<jaccardSimShingle(x-1,y-1)<<endl<<endl;
+				c_end = clock();
+        			cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
+             				 << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl<<endl;
 				funcionalidades();
 				break;
 			case 2:
 				cout<<"Qué dos documentos (forma docx,docy, quieres obtener la aproximación del grado de similitud usando signatures? (valor menor que "<<nDoc<<")"<<endl<<endl;
 				cin>>x>>y;
 				cout<<"La aproximación del grado de similitud de doc"<<x<<".txt y doc"<<y<<".txt es de "<<jaccardSimSignature(x-1,y-1)<<endl<<endl;
+				c_end = clock();
+        			cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
+          				<< 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
 				funcionalidades();
 				break;
 			case 3:
-				char c;
-				cout<<"Deseas cambiar tu parametro de threshold? y/n"<<endl;
-				cin>>c;
-				if(c=='y'){
+				char option;
+				cout<<"Quieres que el valor de b y nHashFunctions sean óptimos? y/n"<<endl;
+				cin>> option;
+				if(option=='y'){
+					case 'y':
+					cout<<"Qué threshold quieres? intervalos de 0.1 a 1 en 0.1 en 0.1: "<<endl;
 					cin>>t;
+					lastValue = b;
+					b=aproxValues[((int) t*10)-1];
+					nHashFunctions = b*3;
 				}
-				LSH();
+				else {
+					cout<<"Quieres los valores nHasValue, b y t predeterminados? y/n"<<endl;
+					cin>> option;
+			 		if(option=='y'){		
+					cout<<"Introduce tu valor nHashValue"<<endl;
+					cin>>nHashFunctions;
+					cout<<"Introduce tu valor b"<<endl;
+					cin>>b;
+					cout<<"Introduce tu valor t"<<endl;
+					cin>>t;
+					cout<<"Depende de la configuración usada podrás tener un porcentaje mayor o menor"<<
+						" de falsos positivos o falsos negativos"<<endl;
+					}
+				}
+					
+				initIndex();	
+				initBooleanShingles();
+				minhashSignatures();
+				LSH();		
+				b = lastValue;
+				nHashFunctions = b*3;	
+				initIndex();
+				initBooleanShingles();
+				minhashSignatures();
 				funcionalidades();
 				break;
-			default: 
-				funcionalidades();
 		}
 	}
 }	

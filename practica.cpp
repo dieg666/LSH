@@ -269,29 +269,70 @@ float jaccardSimilarity(set <string> a, const set <string> &b) {
 float jaccardSimShingle(const int &a, const int &b){
 	//consigue la similitud de los sets a y b (cada set son Shingles)
 	set<string> aux(docShingles[a]);
-	return jaccardSimilarity(aux, docShingles[2]);
+	return jaccardSimilarity(aux, docShingles[b]);
 }
-
+void funcionalidades(){
+	cout<<"envía 0 para salir"<<endl<<
+		"envía 1 para obtener la similitud de Jaccard de dos documentos"<<endl<<
+		"envía 2 para obtener la aproximación del grado de similitud de Jaccard a través de representaciones signatures minhash de dos docuemntos"<<endl<<
+		"envía 3 para obtener la aproximiación del grado de similtud de Jaccard a través de representciones signatures minhash de todos los documentos a partir de t (utilizando LSH)"<<endl;
+}
 int main(int argc, char *argv[]) {
 	init(argc, argv);
-
+	int funcio;
 	// ponemos los valores setShingles y kShingles a punto (crea shingles y los añade individualmente por documento 
 	// en docShingles y globalmente en setShingles
 	kShingle();
 	
 	// ponemos los valores de indexHash a punto
 	initIndex();
+	// conseguimos las signatures utilizando minhash
 
-	//iniciamos vShingles 
+	//iniciamos booleanShingles 
 	initBooleanShingles();
 	
-	//cout<<jaccardSimShingle(1,2)<<endl;
-	//outputSet(setShingles);
-	//output2(docShingles);
-	
-	
+	//creamos las signatures y las ponemos a punto
 	minhashSignatures();
+
+	//dice por pantalla las funcionalidades disponibles
+	cout<<endl;
+	funcionalidades();
+
+	while (cin>>funcio){
+	int x,y;
+		switch(funcio){
+			case 0:
+				exit(1);
+				break;
+			case 1:
+				cout<<"Qué dos documentos (forma docx, docy) quieres obtener similitud de Jaccard? (valor menor que "<<nDoc<<")"<<endl;
+				cin>> x >> y;
+				cout<<"La similitud de doc"<<x<<".txt y doc"<<y<<".txt es de "<<jaccardSimShingle(x-1,y-1)<<endl<<endl;
+				funcionalidades();
+				break;
+			case 2:
+				cout<<"Qué dos documentos (forma docx,docy, quieres obtener la aproximación del grado de similitud usando signatures? (valor menor que "<<nDoc<<")"<<endl<<endl;
+				cin>>x>>y;
+				cout<<"La aproximación del grado de similitud de doc"<<x<<".txt y doc"<<y<<".txt es de "<<jaccardSimSignature(x-1,y-1)<<endl<<endl;
+				funcionalidades();
+				break;
+			case 3:
+				char c;
+				cout<<"Deseas cambiar tu parametro de threshold? y/n"<<endl;
+				cin>>c;
+				if(c=='y'){
+					cin>>t;
+				}
+				LSH();
+				funcionalidades();
+				break;
+			default: 
+				funcionalidades();
+		}
+	}
 	
 	
-	LSH();
+	
+	
+	
 }

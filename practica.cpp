@@ -229,7 +229,7 @@ void generateCandidates(){
 	}
 	for(auto it = candidates.begin(); it!=candidates.end(); it++){
 		it->second = jaccardSimSignature(it->first.first, it->first.second);
-	// debug cout<<it->first.first<<"y"<<it->first.second<<"jaccard de "<<it->second<<endl;
+	// debug cout<<it->first.first<<" y "<<it->first.second<<" jaccard de "<<it->second<<endl;
 	}	
 }
 void similarity() {

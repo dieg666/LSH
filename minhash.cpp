@@ -13,14 +13,19 @@
 #include <stdlib.h>
 #include <map>
 using namespace std;
+/*
+ * 
+ * DADES
+ *
+ *
+ */
 
-//primeNumber debería ser el primer número primo superior a Ndoc
-unsigned int primeNumber = 101;
-unsigned int nDoc = 3;
-unsigned int nHashFunctions = 500; //número de hash functions
-int k = 5;
-int b =100;  //número de bandas
-int r = 5;
+unsigned int primeNumber = 101;	//primer número primo cardinal al set de shingles totales (necesario para el hash)
+unsigned int nDoc = 3; //número de Documentos
+unsigned int nHashFunctions = 300; //número de hash functions
+unsigned int k = 8;	// cuantas palabras tendra cada Shingle?
+unsigned int b =100;  //número de bandas
+unsigned int r = 3; //número de filas para cada bucket (r*b == nHashFunctions)
 double t = 0.5; //threshold
 struct index {
 	unsigned int a;
@@ -34,15 +39,24 @@ vector< set <string > > docShingles;
 set <string >  setShingles;
 	
 //indexHash contiene un vector con una tupla que se usará para crear diferentes permutaciones hasheadas,	
-vector<index> indexHash(nHashFunctions, index{});
+vector<index> indexHash;
 
-//vShingles contiene una matrix con el booleano de las ocurrencias de cada documento respecto el set total de shingles 
+//booleanShingles contiene una matrix con el booleano de las ocurrencias de cada documento respecto el set total de shingles 
 //(siendo 1 una ocurrencia positiva y 0 una negativa)
 vector< vector < bool> > booleanShingles;
+
 //signatureMatrix contendrá la posición del cada shingle de cada documento pero permutado 
 vector< vector < unsigned int > > signatureMatrix;	
 
+//mapa con clave de los documentos candidatos
 map<pair<int,int>, double> candidates;
+
+
+/*
+ *
+ * OUTPUT FUNCTIONS
+ *
+ */
 
 ostream &operator<<(ostream &os, const index &i){
 	return os <<"a = "<<i.a<<" b = "<<i.b;
@@ -64,6 +78,7 @@ void output (const vector < vector < T > > &v) {
 		cout<<endl;
 	}
 }
+
 void outputSet( set <string > &s ){
 	for (auto iterador = s.begin(); iterador != s.end(); iterador++){
 		cout << *iterador<<endl;	
@@ -76,24 +91,59 @@ void output2(vector < set < string > > &s){
 		cout<<endl;
 	}
 }
-int sizeSet(const vector <vector <string> > &v) {
-	set<string> s;
-	for (unsigned int i = 0; i < v.size(); i++) {
-		for (unsigned int j = 0; j < v[i].size(); j++) {
-			s.insert(v[i][j]);
-		}
+/* 
+ *
+ * INIT FUNCTIONS
+ *
+ */
+void init(int n, char *params[]){
+	if(n==1) {
+		cout<<"Utilizando parametros por defecto..."<<endl<<
+			" - número de Docuemntos: "<<nDoc<<endl<<
+			" - número de funciones de Hash: "<<nHashFunctions<<endl<<
+			" - valor de K (palabras de cada Shingle): "<<k<<endl<<
+			" - número de bandas: "<<b<<endl<<
+			" - número de filas hasheadas para cada banda: "<<r<<endl<<
+			" - parametro threshold predefinido: "<<t<<endl;
 	}
-	cout<<endl<<endl;
-	return s.size();
+	else {
+		
+		nDoc=atoi(params[1]);
+		cout<<endl<<"El programa recibe cuantos documentos hay, los documentos tienen que estar de la forma docN.txt"<<endl;
+	}	
+	
+	// inicializaciones correspondientes
+	signatureMatrix = vector< vector < unsigned int > > (nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
+	indexHash = vector<index>(nHashFunctions, index{});
 }
-void initIndex(vector<index> &v) {
-	for (unsigned int i = 0; i < v.size(); i++) {
+void initIndex() {
+	for (unsigned int i = 0; i < indexHash.size(); i++) {
 		srand(time(NULL)*(i+137477057));
-		v[i].a = rand();	
-		v[i].b = rand();
+		indexHash[i].a = rand();	
+		indexHash[i].b = rand();
+	}
+}
+void initBooleanShingles(){
+	// vShingles tiene tamaño el cardinal del set global de shinglex x número de documentos
+	// el valor de cada celda es true si la celda (iterador, fila) contiene el elemento en el set global, si no, será falso	
+	
+	// iniciamos la matrix de booleanos con su tamaño adecuado
+	booleanShingles = vector< vector < bool> > (setShingles.size(), vector<bool> (nDoc,false));	
+	int i = 0;
+	for(auto iterador = setShingles.begin(); iterador != setShingles.end(); iterador++){
+		for(unsigned int j = 0; j<docShingles.size(); j++){
+			if(docShingles[j].find(*iterador)!=docShingles[j].end()) booleanShingles[i][j]=true;
+			else booleanShingles[i][j] = false;
+		}
+		i++;
 	}
 }
 
+/*
+ *
+ * MAIN FUNCTIONS
+ *
+ */
 void minhashSignatures(vector < vector < unsigned int > > & v,const  vector< vector< bool> > &b, const vector <index> &vIndex) {
 	//el hasheo es del estilo (a*i + b) mod primeNumber
 	//miro cada row de b y después cada fila y si da true, modifico v si el valor del hash es inferior a este
@@ -111,31 +161,24 @@ void minhashSignatures(vector < vector < unsigned int > > & v,const  vector< vec
 	}
 }
 
-float sim(const vector < vector< unsigned int > > &v, const int &a, const int &b){
+float jaccardSimSignature(const int &a, const int &b){
 	// dado dos filas de signatures a y b, devuelve la similitud entre esos dos documentos 
 	float value = 0;
-	for (unsigned int i = 0; i < v.size(); i++) {
-		if(v[i][a] == v[i][b]) value++;
+	for (unsigned int i = 0; i < signatureMatrix.size(); i++) {
+		if(signatureMatrix[i][a] == signatureMatrix[i][b]) value++;
 	}
-	return value/v.size();
+	return value/signatureMatrix.size();
 }
 
-void init(int n, char *numeroDoc[]){
-	if(n!=2) {
-		cout<<endl<<"El programa recibe cuantos documentos hay, los documentos tienen que estar de la forma docN.txt"<<endl;
-		exit(1);
-	}
-	nDoc=atoi(numeroDoc[1]);
-}
 
-void  kShingle ( set < string> &setShingles, vector< set<string> > &kShingle){
+void  kShingle (){
 	// esta función añade a setShingles todos los shingles de todos los documentos
 	// mientras que kShingle tendrá el set de shingles de cada documento
 	string s, word;
 	string aux = " ";
 	for (int j = 1; j <= nDoc; ++j){
 		string fileAux;
-		set <string> shingleDoc;
+		set <string> actualDocShingle;
 		fileAux = to_string(j); 
 		ifstream file("doc"+fileAux+".txt");
 		for (unsigned int i = 0; i < k and file>>word; i++){
@@ -143,39 +186,20 @@ void  kShingle ( set < string> &setShingles, vector< set<string> > &kShingle){
 	       		else s.append(" "+word );
 		}
 		setShingles.insert(s);
-		shingleDoc.insert(s);
+		actualDocShingle.insert(s);
 		while (file>>word){
 			s=s.substr(s.find_first_of(aux)+1);
 	       		s.append(" "+word);
-			shingleDoc.insert(s);
+			actualDocShingle.insert(s);
 			setShingles.insert(s);
 		}
-		kShingle.push_back(shingleDoc);
+		docShingles.push_back(actualDocShingle);
 	}
 }
 
-void initBooleanShingles(vector< vector< bool > > &vShingles, const set<string> setShingle, const vector< set< string> > &docShingles){
-	// vShingles tiene tamaño el cardinal del set global de shinglex x número de documentos
-	// el valor de cada celda es true si la celda (iterador, fila) contiene el elemento en el set global, si no, será falso
-	int i = 0;
-	for(auto iterador = setShingle.begin(); iterador != setShingle.end(); iterador++){
-		for(unsigned int j = 0; j<docShingles.size(); j++){
-			if(docShingles[j].find(*iterador)!=docShingles[j].end()) vShingles[i][j]=true;
-			else vShingles[i][j] = false;
-		}
-		i++;
-	}
-}
-double jaccardSignatures(const int &docx, const int &docy){
-	double n = 0;
-	for(int fila = 0; fila < nHashFunctions; fila++){
-		if(signatureMatrix[docx][fila] == signatureMatrix[docy][fila]) ++n;
-	}
-	return  n/nHashFunctions;
-}
 void generateCandidates(){
-	vector <vector <int> > buckets (b, vector<int> (nDoc));
 	hash<string> hString;
+	vector <vector <int> > buckets (b, vector<int> (nDoc));
 	for(unsigned band = 0; band < b; band++){
 		for (unsigned int col = 0; col < nDoc; col++){
 			char aux[r]; 
@@ -199,46 +223,63 @@ void generateCandidates(){
 		}
 	}
 	for(auto it = candidates.begin(); it!=candidates.end(); it++){
-		it->second = jaccardSignatures(it->first.first, it->first.second);
+		it->second = jaccardSimSignature(it->first.first, it->first.second);
 		cout<<it->first.first<<"y"<<it->first.second<<"jaccard de "<<it->second<<endl;
 	}	
 }
-void writeSimilarity() {
+void similarity() {
     //Escriu per pantalla la Similitud de tots els candidats amb Similitud superior al threshold
-    cout <<"VALOR DE THRESHOLD: "<< t << endl;
-    int similars = 0;
-    std::map<pair<int,int>,double>::iterator it = candidates.begin();
-    while (it != candidates.end()) {
+    	cout <<"Threshold value: "<< t << endl;
+	bool similars = false;
+	std::map<pair<int,int>,double>::iterator it = candidates.begin();
+	while (it != candidates.end()) {
         it->second=(it->second);
         if (it->second >= t){
-            cout << "Similitud("<<"doc"<<it->first.first+1  << ".txt, " <<"doc"<<it->first.second+1<<".txt) = " << it->second << endl;
-            similars++;
+		cout << "Similarity of ("<<"doc"<<it->first.first+1  << ".txt, " <<"doc"<<it->first.second+1<<".txt) = " << it->second << endl;
+		similars=true;
         }
         it++;
     }
-    if (similars == 0) cout << "No hi ha cap parell de documents significativament similars."<<endl;
+	if (!similars) {
+	    cout << "No hi ha cap parell de documents significativament similars."<<endl;
+	}
+}
+void LSH(){
+	generateCandidates();
+	similarity();
+}
+float jaccardSimilarity(set <string> a, const set <string> &b) {
+        float intersection = 0;
+        for(auto it = b.begin(); it != b.end(); it++) {
+                if(!a.insert(*it).second)
+                        intersection++;
+        }
+        return intersection / (float) a.size();
 }
 
+float jaccardSimShingle(const int &a, const int &b){
+	set<string> aux(docShingles[a]);
+	return jaccardSimilarity(aux, docShingles[2]);
+}
 
 int main(int argc, char *argv[]) {
 	init(argc, argv);
 
 	// ponemos los valores setShingles y kShingles a punto (crea shingles y los añade individualmente por documento 
 	// en docShingles y globalmente en setShingles
-	kShingle(setShingles, docShingles);
+	kShingle();
 	
 	// ponemos los valores de indexHash a punto
-	initIndex(indexHash);
+	initIndex();
 
-	booleanShingles = vector< vector < bool> > (setShingles.size(), vector<bool> (nDoc,false));	
 	//iniciamos vShingles 
-	initBooleanShingles(booleanShingles, setShingles, docShingles);
+	initBooleanShingles();
 	
-
-	signatureMatrix = vector< vector < unsigned int > > (nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
+	cout<<jaccardSimShingle(1,2)<<endl;
+	//outputSet(setShingles);
+	//output2(docShingles);
 	minhashSignatures(signatureMatrix, booleanShingles, indexHash);
 	
-	cout<<"sim de 0 y 1 :"<<sim(signatureMatrix,1,0)<<endl;
-	generateCandidates();
-	writeSimilarity();
+	
+	LSH();
 }

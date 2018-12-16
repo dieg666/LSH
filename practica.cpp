@@ -104,20 +104,23 @@ void output2(vector < set < string > > &s){
 
 void init(int n, char *params[]){
 	if(n==1) {
-		cout<<"Utilizando parametros por defecto..."<<endl<<
-			" - número de Docuemntos: "<<nDoc<<endl<<
+		cout<<"Utilizando parametros por defecto..."<<endl;
+	}
+	else {
+		cout<<"Utilizando parametros definidos por usuario..."<<endl;
+		if(params[1]!="x") nDoc = atoi(params[1]);	
+		if(params[2]!="x") nHashFunctions= atoi(params[2]);	
+		if(params[3]!="x") k = atoi(params[3]);	
+		if(params[4]!="x") b = atoi(params[4]);	
+		if(params[5]!="x") r = atoi(params[5]);	
+		if(params[6]!="x") t =atof(params[6]);	
+	}	
+	cout<<	" - número de Docuemntos: "<<nDoc<<endl<<
 			" - número de funciones de Hash: "<<nHashFunctions<<endl<<
 			" - valor de K (palabras de cada Shingle): "<<k<<endl<<
 			" - número de bandas: "<<b<<endl<<
 			" - número de filas hasheadas para cada banda: "<<r<<endl<<
-			" - parametro threshold predefinido:"<<t<<endl;
-	}
-	else {
-		
-		nDoc=atoi(params[1]);
-		cout<<endl<<"El programa recibe cuantos documentos hay, los documentos tienen que estar de la forma docN.txt"<<endl;
-	}	
-	
+			" - parametro threshold:"<<t<<endl;
 	// inicializaciones correspondientes
 	signatureMatrix = vector< vector < unsigned int > > (nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
 	indexHash = vector<index>(nHashFunctions, index{});

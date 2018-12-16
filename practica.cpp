@@ -194,8 +194,8 @@ float jaccardSimSignature(const int &a, const int &b){
 		if(signatureMatrix[i][a] == signatureMatrix[i][b]) value++;
 	}
 	clock_t c_end = clock();
-        cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
-                << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
+        //cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
+          //      << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
 	return value/signatureMatrix.size();
 }
 void  kShingle (){

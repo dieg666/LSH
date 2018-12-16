@@ -27,7 +27,7 @@ using namespace std;
  *
  */
 
-unsigned int primeNumber = 101;	//primer número primo cardinal al set de shingles totales (necesario para el hash)
+unsigned int primeNumber = 4999;	//primer número primo cardinal al set de shingles totales (necesario para el hash)
 unsigned int nDoc = 3; //número de Documentos
 unsigned int nHashFunctions = 300; //número de hash functions
 unsigned int k = 8;	// cuantas palabras tendra cada Shingle?
@@ -129,7 +129,20 @@ void init(int n, char *params[]){
 	signatureMatrix = vector< vector < unsigned int > > (nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
 	indexHash = vector<index>(nHashFunctions, index{});
 }
+void initPrimeNumber(){
+	int i,j=2, number=setShingles.size();
+	for(i=number+1;i<3000;i++) {
+        	for(j=2;j <i;j++) {
+			if(i %j==0) break;	
+		}
+        	if(i==j || i==1) {
+			primeNumber = i;    
+			break;
+		}
+	}
+}
 void initIndex() {
+	initPrimeNumber();
 	clock_t c_start = clock();
 	// iniciamos los valores de los indices para el hasheoº
 	for (unsigned int i = 0; i < indexHash.size(); i++) {

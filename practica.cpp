@@ -283,24 +283,26 @@ void LSH(){
 	cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
 		<< 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl<<endl;
 }
-float jaccardSimilarity(set <string> a, const set <string> &b) {
+float jaccardSimilarity(set <string> &a, const int  &b) {
 	//consigue la similitud de dos sets
-	clock_t c_start = clock();
+	//clock_t c_start = clock();
         float intersection = 0;
-        for(auto it = b.begin(); it != b.end(); it++) {
-                if(!a.insert(*it).second)
-                        intersection++;
+        for(auto it = docShingles[b].begin(); it != docShingles[b].end(); it++) {
+		if (!a.insert(*it).second) {
+			//cout<<intersection<<" ";
+			intersection+=1;
+		}
         }
-	clock_t c_end = clock();
-        cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
-                << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl<<endl;
+	//clock_t c_end = clock();
+        //cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
+          //      << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl<<endl;
         return intersection / (float) a.size();
 }
 
 float jaccardSimShingle(const int &a, const int &b){
 	//consigue la similitud de los sets a y b (cada set son Shingles)
-	set<string> aux(docShingles[a]);
-	return jaccardSimilarity(aux, docShingles[b]);
+	set<string> aux= docShingles[a];
+	return jaccardSimilarity(aux, b);
 }
 void funcionalidades(){
 	cout<<"envía 0 para salir"<<endl<<

@@ -104,7 +104,7 @@ void init(int n, char *params[]){
 			" - valor de K (palabras de cada Shingle): "<<k<<endl<<
 			" - número de bandas: "<<b<<endl<<
 			" - número de filas hasheadas para cada banda: "<<r<<endl<<
-			" - parametro threshold predefinido: "<<t<<endl;
+			" - parametro threshold predefinido:"<<t<<endl;
 	}
 	else {
 		

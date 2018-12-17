@@ -119,12 +119,14 @@ void init(int n, char *params[]){
 		if(params[3]!="x") k = atoi(params[3]);	
 		if(params[4]!="x") b = atoi(params[4]);	
 		if(params[5]!="x") r = atoi(params[5]);	
+		if(params[6]!="x") t = atof(params[6]);
 	}	
 	cout<<	" - número de Docuemntos: "<<nDoc<<endl<<
 			" - número de funciones de Hash: "<<nHashFunctions<<endl<<
 			" - valor de K (palabras de cada Shingle): "<<k<<endl<<
 			" - número de bandas: "<<b<<endl<<
-			" - número de filas hasheadas para cada banda: "<<r<<endl;
+			" - número de filas hasheadas para cada banda: "<<r<<endl<<
+			" - valor de threshold: "<<t<<endl;
 	// inicializaciones correspondientes
 	signatureMatrix = vector< vector < unsigned int > > (nHashFunctions, vector<unsigned int> (nDoc, UINT_MAX));
 	indexHash = vector<index>(nHashFunctions, index{});
@@ -237,7 +239,7 @@ void generateCandidates(){
 	for (unsigned int band = 0; band < b; band++){
 		for (unsigned col = 0; col < (nDoc-1); col++){
 			for (unsigned int k = col + 1; k < nDoc; k++){
-				if(buckets[band][col] == buckets[band][k]) {
+				if(col!=k and buckets[band][col] == buckets[band][k]) {
 					pair<int,int> p;
 					p.first = col;
 					p.second = k;
@@ -287,17 +289,42 @@ float jaccardSimilarity(set <string> &a, const int  &b) {
         }
         return intersection / (float) a.size();
 }
-
 float jaccardSimShingle(const int &a, const int &b){
 	//consigue la similitud de los sets a y b (cada set son Shingles)
 	set<string> aux= docShingles[a];
 	return jaccardSimilarity(aux, b);
 }
+void allJaccardSimilarity(int x){
+	bool similars = false;
+	for(unsigned int i = 0; i <nDoc-1; i++){
+		for(unsigned int j = 1; j <nDoc; j++){
+			if (x==1 and i!=j){ 
+				float aux = jaccardSimShingle(i,j);
+			        if(aux>=t) {
+					cout << "Similitud de Jaccard ("<<"doc"<<i+1  << ".txt, " <<"doc"<<j+1<<".txt) = " << aux << endl;
+					similars = true;
+				}
+			} else if (i!=j){
+				float aux = jaccardSimSignature(i,j);
+				if(aux>=t){
+				 	cout << "Aproximación de similitud de Jaccard("<<"doc"<<i+1  << ".txt, " <<"doc"<<j+1<<".txt) = " << aux << endl;
+					similars = true;
+				}	
+			}	
+		}
+	}
+	if (!similars) {
+	    cout << "Ningún documento se parece con ese threshold"<<endl;
+	}
+}
+
 void funcionalidades(){
 	cout<<"envía 0 para salir"<<endl<<
 		"envía 1 para obtener la similitud de Jaccard de dos documentos"<<endl<<
 		"envía 2 para obtener la aproximación del grado de similitud de Jaccard a través de representaciones signatures minhash de dos docuemntos"<<endl<<
-		"envía 3 para obtener la aproximiación del grado de similtud de Jaccard a través de representciones signatures minhash de todos los documentos a partir de t (utilizando LSH)"<<endl;
+		"envía 3 para obtener los documentos con una similitud de Jaccard superior a "<<t<<endl<<
+		"envía 4 para obtener los documentos con la aproximación del grado de similitud de Jaccard superior a "<<t<<endl
+		<<"envía 5 para obtener los documentos con la aproximiación del grado de similtud de Jaccard a través de representciones signatures minhash de todos los documentos a superior a "<<t<<"  (utilizando LSH)"<<endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -331,9 +358,9 @@ int main(int argc, char *argv[]) {
                 << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
 
 	//dice por pantalla las funcionalidades disponibles
+	cout<<setShingles.size()<<endl;
 	cout<<endl;
 	funcionalidades();
-
 	while (cin>>funcio){
 	int x,y,lastValue;
 		switch(funcio){
@@ -341,7 +368,7 @@ int main(int argc, char *argv[]) {
 				exit(1);
 				break;
 			case 1:
-				cout<<"Qué dos documentos (forma docx, docy) quieres obtener similitud de Jaccard? (valor menor que "<<nDoc<<")"<<endl;
+				cout<<"Qué dos documentos (a y b) quieres obtener similitud de Jaccard? (valor menor que "<<nDoc<<")"<<endl;
 				cin>> x >> y;
 				c_start = clock();
 				cout<<"La similitud de doc"<<x<<".txt y doc"<<y<<".txt es de "<<jaccardSimShingle(x-1,y-1)<<endl<<endl;
@@ -351,8 +378,9 @@ int main(int argc, char *argv[]) {
 				funcionalidades();
 				break;
 			case 2:
-				cout<<"Qué dos documentos (forma docx,docy, quieres obtener la aproximación del grado de similitud usando signatures? (valor menor que "<<nDoc<<")"<<endl<<endl;
+				cout<<"Qué dos documentos (a y b), quieres obtener la aproximación del grado de similitud usando signatures? (valor menor que "<<nDoc<<")"<<endl<<endl;
 				cin>>x>>y;
+				c_start = clock();
 				cout<<"La aproximación del grado de similitud de doc"<<x<<".txt y doc"<<y<<".txt es de "<<jaccardSimSignature(x-1,y-1)<<endl<<endl;
 				c_end = clock();
         			cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
@@ -360,6 +388,22 @@ int main(int argc, char *argv[]) {
 				funcionalidades();
 				break;
 			case 3:
+				c_start = clock();
+				allJaccardSimilarity(1);
+				c_end = clock();
+        			cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
+          				<< 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
+				funcionalidades();
+				break;
+			case 4:
+				c_start = clock();
+				allJaccardSimilarity(2);
+				c_end = clock();
+        			cout<<fixed<<setprecision(2)<<"Tiempo de CPU utilizado: "
+          				<< 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
+				funcionalidades();
+				break;
+			case 5:
 				char option;
 				cout<<"Quieres que el valor de b y nHashFunctions sean óptimos? y/n"<<endl;
 				cin>> option;
@@ -374,7 +418,7 @@ int main(int argc, char *argv[]) {
 				else {
 					cout<<"Quieres los valores nHasValue, b y t predeterminados? y/n"<<endl;
 					cin>> option;
-			 		if(option=='y'){		
+			 		if(option=='n'){		
 					cout<<"Introduce tu valor nHashValue"<<endl;
 					cin>>nHashFunctions;
 					cout<<"Introduce tu valor b"<<endl;

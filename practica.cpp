@@ -28,10 +28,10 @@ using namespace std;
  */
 
 unsigned int primeNumber = 4999;	//primer número primo cardinal al set de shingles totales (necesario para el hash)
-unsigned int nDoc = 3; //número de Documentos
-unsigned int nHashFunctions = 300; //número de hash functions
-unsigned int k = 8;	// cuantas palabras tendra cada Shingle?
-unsigned int b =100;  //número de bandas
+unsigned int nDoc = 20; //número de Documentos
+unsigned int nHashFunctions = 999; //número de hash functions
+unsigned int k = 7;	// cuantas palabras tendra cada Shingle?
+unsigned int b =333;  //número de bandas
 unsigned int r = 3; //número de filas para cada bucket (r*b == nHashFunctions)
 double t = 0.0; //threshold
 struct index {
@@ -121,7 +121,7 @@ void init(int n, char *params[]){
 		if(params[5]!="x") r = atoi(params[5]);	
 		if(params[6]!="x") t = atof(params[6]);
 	}	
-	cout<<	" - número de Docuemntos: "<<nDoc<<endl<<
+	cout<<	" - número de Documentos: "<<nDoc<<endl<<
 			" - número de funciones de Hash: "<<nHashFunctions<<endl<<
 			" - valor de K (palabras de cada Shingle): "<<k<<endl<<
 			" - número de bandas: "<<b<<endl<<
@@ -358,7 +358,6 @@ int main(int argc, char *argv[]) {
                 << 1000.0*(c_end-c_start)/CLOCKS_PER_SEC <<"ms"<<endl;
 
 	//dice por pantalla las funcionalidades disponibles
-	cout<<setShingles.size()<<endl;
 	cout<<endl;
 	funcionalidades();
 	while (cin>>funcio){
